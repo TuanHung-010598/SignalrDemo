@@ -1,0 +1,84 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>SignalR Simple Chat</title>
+    <style type="text/css">
+        .container {
+            background-color: #99CCFF;
+            border: thick solid #808080;
+            padding: 20px;
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <input type="text" id="message" />
+        <input type="button" id="sendmessage" value="Send" />
+        <input type="button" id="disconnect" value="disconnect" />
+        <input type="button" id="changeGroupA" value="Change Group A" />
+        <input type="button" id="changeGroupB" value="Change Group B" />
+        <input type="hidden" id="displayname" />
+        <ul id="discussion">
+        </ul>
+    </div>
+    <!--Script references. -->
+    <script src="Scripts/jquery-3.4.1.min.js"></script>
+    <script src="Scripts/jquery.signalR-2.2.2.min.js"></script>
+    <script src="signalr/hubs"></script>
+    <script type="text/javascript">
+        var chat = $.connection.chatHub;
+
+        $(function () {
+
+
+            chat.client.broadcastMessage = function (name, message) {
+                var encodedName = $('<div />').text(name).html();
+                var encodedMsg = $('<div />').text(message).html();
+                $('#discussion').append('<li><strong>' + encodedName
+                    + '</strong>:&nbsp;&nbsp;' + encodedMsg + '</li>');
+            };
+
+            chat.client.groupAMessage = function (message) {
+                alert('Tin nhan tu nhom A : ' + message);
+            }
+
+            chat.client.groupBMessage = function (message) {
+                alert('Tin nhan tu nhom B : ' + message);
+            }
+
+            $('#displayname').val(prompt('Enter your name:', ''));
+
+            $.connection.hub.qs = { "name": $('#displayname').val(), "group": "All" };
+            $('#message').focus();
+            $.connection.hub.start().done(function () {
+                $('#sendmessage').click(function () {
+                    chat.server.send($('#displayname').val(), $('#message').val());
+                    //chat.server.sendToGroupA($('#message').val());
+                    $('#message').val('').focus();
+                });
+            });
+
+            
+        });
+
+        function disconnect() {
+            $.connection.hub.disconnected(function () {
+                alert('disconnected');
+            });
+
+            $.connection.hub.stop();
+        };
+
+        $('#disconnect').click(disconnect);
+
+        $('#changeGroupA').click(function () {
+            chat.server.changeGroup("GroupA");
+        })
+
+        $('#changeGroupB').click(function () {
+            chat.server.changeGroup("GroupB");
+        })
+    </script>
+</body>
+</html>
